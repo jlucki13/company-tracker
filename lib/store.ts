@@ -1,5 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import { join } from 'path'
+import { kv } from '@vercel/kv'
 
 export interface Company {
   id: string
@@ -9,20 +8,13 @@ export interface Company {
   addedAt: string
 }
 
-const STORE = join(process.cwd(), 'data', 'companies.json')
+const KEY = 'companies'
 
-function ensureDir() {
-  const dir = join(process.cwd(), 'data')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+export async function readCompanies(): Promise<Company[]> {
+  const data = await kv.get<Company[]>(KEY)
+  return data ?? []
 }
 
-export function readCompanies(): Company[] {
-  ensureDir()
-  if (!existsSync(STORE)) { writeFileSync(STORE, '[]', 'utf-8'); return [] }
-  try { return JSON.parse(readFileSync(STORE, 'utf-8')) } catch { return [] }
-}
-
-export function writeCompanies(companies: Company[]) {
-  ensureDir()
-  writeFileSync(STORE, JSON.stringify(companies, null, 2), 'utf-8')
+export async function writeCompanies(companies: Company[]): Promise<void> {
+  await kv.set(KEY, companies)
 }

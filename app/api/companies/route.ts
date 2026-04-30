@@ -3,8 +3,8 @@ import { NextRequest } from 'next/server'
 import { randomUUID } from 'crypto'
 
 export async function GET() {
-  const companies = readCompanies().sort((a, b) => a.rank - b.rank)
-  return Response.json(companies)
+  const companies = await readCompanies()
+  return Response.json(companies.sort((a, b) => a.rank - b.rank))
 }
 
 export async function POST(req: NextRequest) {
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const { ticker, name } = body as { ticker: string; name: string }
   if (!ticker || !name) return Response.json({ error: 'ticker and name required' }, { status: 400 })
 
-  const companies = readCompanies()
+  const companies = await readCompanies()
   if (companies.length >= 10) return Response.json({ error: 'Top 10 is full — remove one first' }, { status: 400 })
 
   const upper = ticker.toUpperCase()
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   const company = { id: randomUUID(), ticker: upper, name, rank: companies.length + 1, addedAt: new Date().toISOString() }
-  writeCompanies([...companies, company])
+  await writeCompanies([...companies, company])
   return Response.json(company, { status: 201 })
 }
 
@@ -30,17 +30,20 @@ export async function DELETE(req: NextRequest) {
   if (!ticker) return Response.json({ error: 'ticker required' }, { status: 400 })
 
   const upper = ticker.toUpperCase()
-  const companies = readCompanies().filter(c => c.ticker !== upper)
-  const reranked = companies.sort((a, b) => a.rank - b.rank).map((c, i) => ({ ...c, rank: i + 1 }))
-  writeCompanies(reranked)
+  const companies = await readCompanies()
+  const reranked = companies
+    .filter(c => c.ticker !== upper)
+    .sort((a, b) => a.rank - b.rank)
+    .map((c, i) => ({ ...c, rank: i + 1 }))
+  await writeCompanies(reranked)
   return Response.json({ ok: true })
 }
 
 export async function PUT(req: NextRequest) {
   const body = await req.json() as Array<{ ticker: string; rank: number }>
-  const companies = readCompanies()
+  const companies = await readCompanies()
   const rankMap = new Map(body.map(({ ticker, rank }) => [ticker.toUpperCase(), rank]))
   const updated = companies.map(c => ({ ...c, rank: rankMap.get(c.ticker) ?? c.rank }))
-  writeCompanies(updated)
+  await writeCompanies(updated)
   return Response.json({ ok: true })
 }
