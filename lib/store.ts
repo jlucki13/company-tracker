@@ -11,9 +11,9 @@ export interface Company {
 const KEY = 'companies'
 
 function client() {
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) throw new Error('Upstash Redis env vars not set (UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN)')
+  const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL
+  const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN
+  if (!url || !token) throw new Error('Upstash Redis env vars not set')
   return new Redis({ url, token })
 }
 
