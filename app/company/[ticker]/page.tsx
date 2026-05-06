@@ -7,12 +7,31 @@ import RatiosRadar from '@/components/charts/RatiosRadar'
 import MarginsChart from '@/components/charts/MarginsChart'
 import NewsSection from '@/components/NewsSection'
 import FilingsSection from '@/components/FilingsSection'
+import { getProfile, getQuote } from '@/lib/finnhub'
 
 async function getCompany(ticker: string) {
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
-  const res = await fetch(`${base}/api/company?ticker=${ticker}`, { cache: 'no-store' })
-  if (!res.ok) return null
-  return res.json()
+  try {
+    const [profile, quote] = await Promise.all([getProfile(ticker), getQuote(ticker)])
+    if (!profile.name) return null
+    return {
+      ticker,
+      name: profile.name,
+      exchange: profile.exchange,
+      sector: profile.finnhubIndustry,
+      logo: profile.logo,
+      website: profile.weburl,
+      marketCap: profile.marketCapitalization,
+      currency: profile.currency,
+      price: quote.c,
+      change: quote.d,
+      changePercent: quote.dp,
+      high: quote.h,
+      low: quote.l,
+      prevClose: quote.pc,
+    }
+  } catch {
+    return null
+  }
 }
 
 function fmtMarketCap(v: number) {
