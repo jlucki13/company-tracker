@@ -5,15 +5,11 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 interface PricePoint { date: string; close: number }
 
+const DARK = { bg: '#0a1628', border: '#1e3a5f', text: '#4a7fa5', tooltip: '#0d1b2e' }
+
 function fmt(v: number) { return `$${v.toFixed(2)}` }
-function fmtDate(d: string) {
-  const dt = new Date(d)
-  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-function fmtAxis(d: string) {
-  const dt = new Date(d)
-  return dt.toLocaleDateString('en-US', { month: 'short' })
-}
+function fmtDate(d: string) { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }
+function fmtAxis(d: string) { return new Date(d).toLocaleDateString('en-US', { month: 'short' }) }
 
 export default function StockPriceChart({ ticker }: { ticker: string }) {
   const [data, setData] = useState<PricePoint[]>([])
@@ -23,17 +19,14 @@ export default function StockPriceChart({ ticker }: { ticker: string }) {
   useEffect(() => {
     fetch(`/api/price-history?ticker=${ticker}`)
       .then(r => r.json())
-      .then(d => {
-        if (d.error) throw new Error(d.error)
-        setData(d)
-      })
+      .then(d => { if (d.error) throw new Error(d.error); setData(d) })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [ticker])
 
-  if (loading) return <div className="h-64 bg-gray-100 animate-pulse rounded-xl" />
-  if (error) return <div className="h-64 flex items-center justify-center text-sm text-red-500 bg-red-50 rounded-xl">{error}</div>
-  if (!data.length) return <div className="h-64 flex items-center justify-center text-sm text-gray-400">No price data available</div>
+  if (loading) return <div className="h-64 bg-[#0a1628] animate-pulse rounded-xl" />
+  if (error) return <div className="h-64 flex items-center justify-center text-sm text-red-400 bg-red-900/20 rounded-xl">{error}</div>
+  if (!data.length) return <div className="h-64 flex items-center justify-center text-sm text-[#4a7fa5]">No price data available</div>
 
   const prices = data.map(d => d.close)
   const minP = Math.min(...prices)
@@ -51,20 +44,17 @@ export default function StockPriceChart({ ticker }: { ticker: string }) {
     <ResponsiveContainer width="100%" height={280}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
-          <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+          <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.35} />
+            <stop offset="95%" stopColor="#00d4ff" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-        <XAxis dataKey="date" ticks={ticks} tickFormatter={fmtAxis} tick={{ fontSize: 11 }} />
-        <YAxis domain={[minP - pad, maxP + pad]} tickFormatter={fmt} tick={{ fontSize: 11 }} width={62} />
-        <Tooltip
-          formatter={(v: unknown) => [fmt(v as number), 'Close']}
-          labelFormatter={(d: unknown) => fmtDate(d as string)}
-          contentStyle={{ fontSize: 12, borderRadius: 8 }}
-        />
-        <Area type="monotone" dataKey="close" stroke="#6366f1" strokeWidth={2} fill="url(#priceGradient)" dot={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={DARK.border} />
+        <XAxis dataKey="date" ticks={ticks} tickFormatter={fmtAxis} tick={{ fontSize: 11, fill: DARK.text }} axisLine={{ stroke: DARK.border }} tickLine={false} />
+        <YAxis domain={[minP - pad, maxP + pad]} tickFormatter={fmt} tick={{ fontSize: 11, fill: DARK.text }} width={62} axisLine={false} tickLine={false} />
+        <Tooltip formatter={(v: unknown) => [fmt(v as number), 'Close']} labelFormatter={(d: unknown) => fmtDate(d as string)}
+          contentStyle={{ fontSize: 12, borderRadius: 8, background: DARK.tooltip, border: `1px solid ${DARK.border}`, color: '#e2e8f0' }} />
+        <Area type="monotone" dataKey="close" stroke="#00d4ff" strokeWidth={2.5} fill="url(#priceGrad)" dot={false} />
       </AreaChart>
     </ResponsiveContainer>
   )

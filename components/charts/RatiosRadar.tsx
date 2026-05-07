@@ -1,65 +1,72 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 interface RatioData {
-  pe: number | null
-  pb: number | null
-  roe: number | null
-  roa: number | null
-  currentRatio: number | null
+  pe: number | null; pb: number | null; roe: number | null
+  roa: number | null; currentRatio: number | null; debtEquity: number | null; netMargin: number | null
 }
 
-interface RadarPoint { metric: string; value: number; raw: string }
+const METRICS = [
+  { key: 'pe' as const, label: 'P/E Ratio', cap: 60, fmt: (v: number) => `${v.toFixed(1)}x`, color: '#00d4ff' },
+  { key: 'pb' as const, label: 'P/B Ratio', cap: 20, fmt: (v: number) => `${v.toFixed(1)}x`, color: '#a855f7' },
+  { key: 'roe' as const, label: 'ROE', cap: 100, fmt: (v: number) => `${v.toFixed(1)}%`, color: '#00ff88' },
+  { key: 'roa' as const, label: 'ROA', cap: 30, fmt: (v: number) => `${v.toFixed(1)}%`, color: '#ffd700' },
+  { key: 'currentRatio' as const, label: 'Current Ratio', cap: 5, fmt: (v: number) => v.toFixed(2), color: '#ff6b35' },
+]
 
-const CAPS: Record<string, number> = { 'P/E': 60, 'P/B': 20, 'ROE (%)': 60, 'ROA (%)': 30, 'Current Ratio': 5 }
-
-function normalize(value: number, cap: number): number {
-  return Math.min(Math.max((value / cap) * 100, 0), 100)
+function Gauge({ label, raw, pct, color }: { label: string; raw: string; pct: number; color: string }) {
+  const r = 34
+  const circ = 2 * Math.PI * r
+  const arc = circ * 0.75
+  const offset = arc * (1 - Math.min(Math.max(pct, 0), 1))
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <svg width={90} height={72} viewBox="0 0 90 72">
+        <circle cx={45} cy={48} r={r} fill="none" stroke="#1e3a5f" strokeWidth={7}
+          strokeDasharray={`${arc} ${circ}`} strokeLinecap="round"
+          style={{ transform: 'rotate(135deg)', transformOrigin: '45px 48px' }} />
+        <circle cx={45} cy={48} r={r} fill="none" stroke={color} strokeWidth={7}
+          strokeDasharray={`${arc} ${circ}`} strokeDashoffset={offset} strokeLinecap="round"
+          style={{ transform: 'rotate(135deg)', transformOrigin: '45px 48px', filter: `drop-shadow(0 0 4px ${color})` }} />
+        <text x={45} y={53} textAnchor="middle" fill="white" fontSize={13} fontWeight="bold">{raw}</text>
+      </svg>
+      <span className="text-xs text-[#4a7fa5] text-center leading-tight">{label}</span>
+    </div>
+  )
 }
 
 export default function RatiosRadar({ ticker }: { ticker: string }) {
-  const [data, setData] = useState<RadarPoint[]>([])
+  const [data, setData] = useState<RatioData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/ratios?ticker=${ticker}`)
       .then(r => r.json())
-      .then((d: RatioData & { error?: string }) => {
-        if (d.error) throw new Error(d.error)
-        const metrics: Array<{ label: string; value: number | null; fmt: string }> = [
-          { label: 'P/E', value: d.pe, fmt: d.pe != null ? `${d.pe.toFixed(1)}x` : 'N/A' },
-          { label: 'P/B', value: d.pb, fmt: d.pb != null ? `${d.pb.toFixed(1)}x` : 'N/A' },
-          { label: 'ROE (%)', value: d.roe, fmt: d.roe != null ? `${d.roe.toFixed(1)}%` : 'N/A' },
-          { label: 'ROA (%)', value: d.roa, fmt: d.roa != null ? `${d.roa.toFixed(1)}%` : 'N/A' },
-          { label: 'Current Ratio', value: d.currentRatio, fmt: d.currentRatio != null ? d.currentRatio.toFixed(2) : 'N/A' },
-        ]
-        setData(metrics.map(m => ({
-          metric: m.label,
-          value: m.value != null ? normalize(m.value, CAPS[m.label]) : 0,
-          raw: m.fmt,
-        })))
-      })
+      .then((d: RatioData & { error?: string }) => { if (d.error) throw new Error(d.error); setData(d) })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [ticker])
 
-  if (loading) return <div className="h-64 bg-gray-100 animate-pulse rounded-xl" />
-  if (error) return <div className="h-64 flex items-center justify-center text-sm text-red-500 bg-red-50 rounded-xl">{error}</div>
+  if (loading) return <div className="h-64 bg-[#0a1628] animate-pulse rounded-xl" />
+  if (error) return <div className="h-64 flex items-center justify-center text-sm text-red-400 bg-red-900/20 rounded-xl">{error}</div>
+  if (!data) return null
 
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <RadarChart data={data} margin={{ top: 8, right: 30, left: 30, bottom: 8 }}>
-        <PolarGrid stroke="#e5e7eb" />
-        <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
-        <Tooltip
-          formatter={(_: unknown, __: unknown, props: { payload?: RadarPoint }) => [props.payload?.raw ?? '—', 'Value']}
-          contentStyle={{ fontSize: 12, borderRadius: 8 }}
-        />
-        <Radar dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.25} strokeWidth={2} />
-      </RadarChart>
-    </ResponsiveContainer>
+    <div className="grid grid-cols-3 gap-4 py-2">
+      {METRICS.map(m => {
+        const val = data[m.key]
+        return (
+          <Gauge key={m.key} label={m.label}
+            raw={val != null ? m.fmt(val) : 'N/A'}
+            pct={val != null ? val / m.cap : 0}
+            color={m.color} />
+        )
+      })}
+      {data.netMargin != null && (
+        <Gauge label="Net Margin" raw={`${data.netMargin.toFixed(1)}%`} pct={data.netMargin / 40} color="#2dd4bf" />
+      )}
+    </div>
   )
 }
