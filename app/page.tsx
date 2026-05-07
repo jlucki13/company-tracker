@@ -1,15 +1,17 @@
 import TopTenList from '@/components/TopTenList'
-import { BarChart2 } from 'lucide-react'
+import { TrendingUp } from 'lucide-react'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <BarChart2 size={24} className="text-indigo-600" />
+    <div className="min-h-screen bg-gray-950">
+      <header className="bg-gray-900 border-b border-gray-800 px-6 py-5 shadow-lg">
+        <div className="max-w-3xl mx-auto flex items-center gap-4">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+            <TrendingUp size={20} className="text-white" strokeWidth={2.5} />
+          </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Company Tracker</h1>
-            <p className="text-xs text-gray-400">Monitor your top consulting clients</p>
+            <h1 className="text-xl font-bold text-white tracking-tight">Company Tracker</h1>
+            <p className="text-xs text-gray-500">Monitor your top consulting clients</p>
           </div>
         </div>
       </header>

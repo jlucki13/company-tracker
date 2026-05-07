@@ -103,15 +103,15 @@ export default function TopTenList() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={i} className="h-16 bg-gray-800 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : companies.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Building2 size={48} className="text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-1">No companies tracked yet</h3>
-          <p className="text-sm text-gray-400 max-w-sm">
-            Search for a company above and click <strong>Add</strong> to start building your Top 10 list.
+          <Building2 size={48} className="text-gray-700 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-400 mb-1">No companies tracked yet</h3>
+          <p className="text-sm text-gray-600 max-w-sm">
+            Search for a company above and click <strong className="text-gray-400">Add</strong> to start building your Top 10 list.
           </p>
         </div>
       ) : (
@@ -126,7 +126,7 @@ export default function TopTenList() {
               onMoveDown={handleMoveDown}
             />
           ))}
-          <p className="text-xs text-gray-400 text-right pt-1">{companies.length}/10 slots used</p>
+          <p className="text-xs text-gray-600 text-right pt-1">{companies.length}/10 slots used</p>
         </div>
       )}
     </div>

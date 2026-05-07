@@ -80,7 +80,7 @@ export default function CompanySearch({ existingTickers, onAdd }: Props) {
           onChange={e => { setQuery(e.target.value); setError(null) }}
           onFocus={() => results.length > 0 && setOpen(true)}
           placeholder="Search by company name or ticker…"
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-700 bg-gray-800 text-white placeholder-gray-500 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
         {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
@@ -90,19 +90,19 @@ export default function CompanySearch({ existingTickers, onAdd }: Props) {
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
 
       {open && results.length > 0 && (
-        <div ref={dropdownRef} className="absolute z-50 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+        <div ref={dropdownRef} className="absolute z-50 mt-1 w-full bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
           {results.map(r => {
             const alreadyAdded = existingTickers.includes(r.symbol)
             return (
-              <div key={r.symbol} className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 border-b border-gray-100 last:border-0">
+              <div key={r.symbol} className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-700/60 border-b border-gray-700 last:border-0">
                 <div className="flex-1 min-w-0">
-                  <span className="font-semibold text-sm text-gray-900 font-mono">{r.displaySymbol}</span>
-                  <span className="ml-2 text-sm text-gray-600 truncate">{r.description}</span>
+                  <span className="font-semibold text-sm text-white font-mono">{r.displaySymbol}</span>
+                  <span className="ml-2 text-sm text-gray-400 truncate">{r.description}</span>
                 </div>
                 <div className="flex items-center gap-2 ml-3 shrink-0">
                   <button
                     onClick={() => router.push(`/company/${r.symbol}`)}
-                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 px-2 py-1 rounded hover:bg-indigo-50"
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-400 px-2 py-1 rounded hover:bg-indigo-900/40"
                   >
                     View <ExternalLink size={11} />
                   </button>
