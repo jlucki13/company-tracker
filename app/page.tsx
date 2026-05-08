@@ -1,5 +1,6 @@
 import TopTenList from '@/components/TopTenList'
 import TickerMarquee from '@/components/TickerMarquee'
+import EarningsCalendar from '@/components/EarningsCalendar'
 import { TrendingUp } from 'lucide-react'
 
 export default function HomePage() {
@@ -19,8 +20,9 @@ export default function HomePage() {
 
       <TickerMarquee />
 
-      <main className="max-w-3xl mx-auto px-6 py-8">
+      <main className="max-w-3xl mx-auto px-6 py-8 space-y-6">
         <TopTenList />
+        <EarningsCalendar />
       </main>
     </div>
   )

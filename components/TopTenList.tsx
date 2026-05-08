@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import CompanyCard, { type CompanyCardData } from './CompanyCard'
 import CompanySearch from './CompanySearch'
-import { Building2 } from 'lucide-react'
+import HeatMap from './HeatMap'
+import { Building2, LayoutGrid, List } from 'lucide-react'
 
 interface StoredCompany {
   id: string
@@ -16,6 +17,7 @@ export default function TopTenList() {
   const [companies, setCompanies] = useState<CompanyCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [view, setView] = useState<'list' | 'heatmap'>('list')
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type })
@@ -115,18 +117,41 @@ export default function TopTenList() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {companies.map(c => (
-            <CompanyCard
-              key={c.ticker}
-              company={c}
-              total={companies.length}
-              onRemove={handleRemove}
-              onMoveUp={handleMoveUp}
-              onMoveDown={handleMoveDown}
-            />
-          ))}
-          <p className="text-xs text-gray-600 text-right pt-1">{companies.length}/10 slots used</p>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-600">{companies.length}/10 slots used</p>
+            <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
+              <button
+                onClick={() => setView('list')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${view === 'list' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                <List size={13} /> List
+              </button>
+              <button
+                onClick={() => setView('heatmap')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${view === 'heatmap' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                <LayoutGrid size={13} /> Heatmap
+              </button>
+            </div>
+          </div>
+
+          {view === 'list' ? (
+            <div className="space-y-2">
+              {companies.map(c => (
+                <CompanyCard
+                  key={c.ticker}
+                  company={c}
+                  total={companies.length}
+                  onRemove={handleRemove}
+                  onMoveUp={handleMoveUp}
+                  onMoveDown={handleMoveDown}
+                />
+              ))}
+            </div>
+          ) : (
+            <HeatMap companies={companies} />
+          )}
         </div>
       )}
     </div>

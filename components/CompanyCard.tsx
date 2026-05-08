@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronUp, ChevronDown, X, ExternalLink } from 'lucide-react'
+import { ChevronUp, ChevronDown, X, ExternalLink, Scale } from 'lucide-react'
 import Link from 'next/link'
 
 export interface CompanyCardData {
@@ -77,6 +77,14 @@ export default function CompanyCard({ company, total, onRemove, onMoveUp, onMove
           <div className="text-xs text-gray-600">Loading...</div>
         )}
       </div>
+
+      <Link
+        href={`/compare?a=${company.ticker}`}
+        className="shrink-0 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 font-medium px-2 py-1 rounded hover:bg-gray-700/60"
+        title="Compare"
+      >
+        <Scale size={12} />
+      </Link>
 
       <Link
         href={`/company/${company.ticker}`}
