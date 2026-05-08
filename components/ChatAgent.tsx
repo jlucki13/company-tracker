@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, Loader2, Wrench } from 'lucide-react'
+import { Sparkles, Paperclip, ArrowUp, Loader2, Wrench, User, Bot } from 'lucide-react'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 
 interface DisplayMessage {
@@ -39,8 +39,6 @@ export default function ChatAgent({ ticker, name }: { ticker: string; name: stri
     const newApiMessages: MessageParam[] = [...apiMessages, { role: 'user', content: userText }]
     setApiMessages(newApiMessages)
     setMessages(prev => [...prev, { role: 'user', text: userText }])
-
-    // Add empty assistant message that will be filled by streaming
     setMessages(prev => [...prev, { role: 'assistant', text: '', toolCalls: [], streaming: true }])
 
     try {
@@ -60,15 +58,11 @@ export default function ChatAgent({ ticker, name }: { ticker: string; name: stri
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-
         const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
-
-        for (const line of lines) {
+        for (const line of chunk.split('\n')) {
           if (!line.startsWith('data: ')) continue
           const data = line.slice(6)
           if (data === '[DONE]') continue
-
           try {
             const event = JSON.parse(data) as { type: string; text?: string; name?: string }
             if (event.type === 'text' && event.text) {
@@ -86,13 +80,10 @@ export default function ChatAgent({ ticker, name }: { ticker: string; name: stri
                 return next
               })
             }
-          } catch {
-            // ignore parse errors on incomplete chunks
-          }
+          } catch { /* incomplete chunk */ }
         }
       }
 
-      // Finalize message
       setMessages(prev => {
         const next = [...prev]
         next[next.length - 1] = { role: 'assistant', text: assistantText, toolCalls: toolCallNames, streaming: false }
@@ -112,92 +103,125 @@ export default function ChatAgent({ ticker, name }: { ticker: string; name: stri
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      send(input)
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) }
   }
 
+  const isEmpty = messages.length === 0
+
   return (
-    <section className="bg-[#0d1b2e] rounded-2xl border border-[#1e3a5f] overflow-hidden">
-      <div className="px-6 py-4 border-b border-[#1e3a5f] flex items-center gap-2">
-        <Bot size={16} className="text-cyan-400" />
-        <h2 className="text-sm font-semibold text-cyan-400 uppercase tracking-widest">AI Analyst — {name}</h2>
-      </div>
+    <section className="relative rounded-2xl overflow-hidden bg-[#09090f] border border-white/[0.06]">
+      {/* Spotlight glow — only visible in hero state */}
+      {isEmpty && (
+        <div
+          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-30"
+          style={{ background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.18) 0%, transparent 70%)' }}
+        />
+      )}
 
-      <div className="h-[400px] overflow-y-auto px-6 py-4 space-y-4 flex flex-col">
-        {messages.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-            <Bot size={32} className="text-[#1e3a5f]" />
-            <p className="text-sm text-[#4a7fa5]">Ask anything about {name}&#39;s financials, performance, or competitors.</p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {SUGGESTED.map(q => (
-                <button
-                  key={q}
-                  onClick={() => send(q)}
-                  className="text-xs px-3 py-1.5 rounded-full border border-[#1e3a5f] text-[#4a7fa5] hover:border-cyan-400 hover:text-cyan-400 transition-colors"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
+      {/* Hero empty state */}
+      {isEmpty && (
+        <div className="relative flex flex-col items-center justify-center gap-6 px-6 pt-16 pb-8 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs text-white/70 border border-white/10 bg-white/5 backdrop-blur-sm">
+            <span className="text-base">✦</span>
+            AI Financial Analyst
           </div>
-        )}
 
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-full bg-cyan-900/40 border border-cyan-700/40 flex items-center justify-center shrink-0 mt-0.5">
-                <Bot size={14} className="text-cyan-400" />
-              </div>
-            )}
-            <div className={`max-w-[80%] space-y-1.5 ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
-              {msg.toolCalls && msg.toolCalls.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {msg.toolCalls.map((tc, j) => (
-                    <span key={j} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[#0a1628] border border-[#1e3a5f] text-[#4a7fa5]">
-                      <Wrench size={9} />
-                      {tc.replace(/_/g, ' ')}
-                    </span>
-                  ))}
+          {/* Heading */}
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight tracking-tight">
+              Ask me anything about<br />
+              <span className="text-white/50">{name}</span>
+            </h2>
+            <p className="mt-3 text-sm text-white/40">
+              I can pull live financials, ratios, earnings, margins, and news.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Messages area (only shown once chat starts) */}
+      {!isEmpty && (
+        <div className="h-[420px] overflow-y-auto px-6 py-6 space-y-5">
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {msg.role === 'assistant' && (
+                <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <Bot size={13} className="text-white/60" />
                 </div>
               )}
-              <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === 'user'
-                  ? 'bg-cyan-900/30 border border-cyan-700/40 text-cyan-100 rounded-br-sm'
-                  : 'bg-[#0a1628] border border-[#1e3a5f] text-[#e2e8f0] rounded-bl-sm'
-              }`}>
-                {msg.text || (msg.streaming ? <Loader2 size={14} className="animate-spin text-[#4a7fa5]" /> : null)}
+              <div className={`max-w-[82%] flex flex-col gap-1.5 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                {msg.toolCalls && msg.toolCalls.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {msg.toolCalls.map((tc, j) => (
+                      <span key={j} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/40">
+                        <Wrench size={9} />
+                        {tc.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                  msg.role === 'user'
+                    ? 'bg-white/10 text-white rounded-br-sm'
+                    : 'bg-white/5 border border-white/[0.07] text-white/80 rounded-bl-sm'
+                }`}>
+                  {msg.text || (msg.streaming
+                    ? <span className="flex gap-1 items-center py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce [animation-delay:0ms]" /><span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce [animation-delay:150ms]" /><span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce [animation-delay:300ms]" /></span>
+                    : null)}
+                </div>
               </div>
+              {msg.role === 'user' && (
+                <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <User size={13} className="text-white/60" />
+                </div>
+              )}
             </div>
-            {msg.role === 'user' && (
-              <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center shrink-0 mt-0.5">
-                <User size={14} className="text-[#4a7fa5]" />
-              </div>
-            )}
-          </div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      )}
 
-      <div className="px-4 py-3 border-t border-[#1e3a5f] flex gap-2">
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={`Ask about ${name}…`}
-          disabled={loading}
-          className="flex-1 bg-[#060e1f] border border-[#1e3a5f] rounded-xl px-4 py-2 text-sm text-[#e2e8f0] placeholder-[#2a4a6a] focus:outline-none focus:border-cyan-600 disabled:opacity-50 transition-colors"
-        />
-        <button
-          onClick={() => send(input)}
-          disabled={loading || !input.trim()}
-          className="w-9 h-9 rounded-xl bg-cyan-700 hover:bg-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors shrink-0"
-        >
-          {loading ? <Loader2 size={15} className="animate-spin text-white" /> : <Send size={15} className="text-white" />}
-        </button>
+      {/* Input bar */}
+      <div className={`px-4 ${isEmpty ? 'pb-8' : 'pb-4 border-t border-white/[0.06]'}`}>
+        <div className="flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 focus-within:border-white/20 transition-colors">
+          <Paperclip size={16} className="text-white/30 shrink-0" />
+          <Sparkles size={16} className="text-purple-400/70 shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`How can I help you with ${name} today?`}
+            disabled={loading}
+            className="flex-1 bg-transparent text-sm text-white placeholder-white/25 focus:outline-none disabled:opacity-50 min-w-0"
+          />
+          <button
+            onClick={() => send(input)}
+            disabled={loading || !input.trim()}
+            className="w-8 h-8 rounded-xl bg-white disabled:bg-white/20 hover:bg-white/90 flex items-center justify-center transition-all shrink-0 disabled:cursor-not-allowed"
+          >
+            {loading
+              ? <Loader2 size={14} className="animate-spin text-black/60" />
+              : <ArrowUp size={14} className="text-black" />}
+          </button>
+        </div>
+
+        {/* Suggestion chips */}
+        {isEmpty && (
+          <div className="flex flex-wrap gap-2 justify-center mt-4">
+            {SUGGESTED.map(q => (
+              <button
+                key={q}
+                onClick={() => send(q)}
+                className="text-xs px-3.5 py-1.5 rounded-full border border-white/10 bg-white/[0.04] text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20 transition-all"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )
