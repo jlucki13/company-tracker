@@ -7,6 +7,7 @@ import RatiosRadar from '@/components/charts/RatiosRadar'
 import MarginsChart from '@/components/charts/MarginsChart'
 import NewsSection from '@/components/NewsSection'
 import FilingsSection from '@/components/FilingsSection'
+import ChatAgent from '@/components/ChatAgent'
 import { getProfile, getQuote } from '@/lib/finnhub'
 
 async function getCompany(ticker: string) {
@@ -126,6 +127,7 @@ export default async function CompanyDetailPage(props: { params: Promise<{ ticke
 
         <NewsSection ticker={symbol} name={company?.name ?? symbol} />
         <FilingsSection ticker={symbol} />
+        <ChatAgent ticker={symbol} name={company?.name ?? symbol} />
       </main>
     </div>
   )
